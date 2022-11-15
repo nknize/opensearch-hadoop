@@ -79,13 +79,13 @@ The properties are read mainly from the Hadoop configuration but the user can sp
 
 ### Required
 ```
-es.resource=<ES resource location, relative to the host/port specified above>
+opensearch.resource=<ES resource location, relative to the host/port specified above>
 ```
 ### Essential
 ```
 es.query=<uri or query dsl query>              # defaults to {"query":{"match_all":{}}}
 opensearch.nodes=<OpenSearch host address>     # defaults to localhost
-es.port=<ES REST port>                         # defaults to 9200
+opensearch.port=<OPENSEARCH REST port>         # defaults to 9200
 ```
 
 The full list is available [here](http://www.elastic.co/guide/en/elasticsearch/hadoop/current/configuration.html)
@@ -105,7 +105,7 @@ To read data from ES, configure the `EsInputFormat` on your job configuration al
 ```java
 JobConf conf = new JobConf();
 conf.setInputFormat(EsInputFormat.class);
-conf.set("es.resource", "radio/artists");
+conf.set("opensearch.resource", "radio/artists");
 conf.set("es.query", "?q=me*");             // replace this with the relevant query
 ...
 JobClient.runJob(conf);
@@ -115,7 +115,7 @@ Same configuration template can be used for writing but using `EsOuputFormat`:
 ```java
 JobConf conf = new JobConf();
 conf.setOutputFormat(EsOutputFormat.class);
-conf.set("es.resource", "radio/artists"); // index or indices used for storing data
+conf.set("opensearch.resource", "radio/artists"); // index or indices used for storing data
 ...
 JobClient.runJob(conf);
 ```
@@ -124,7 +124,7 @@ JobClient.runJob(conf);
 ### Reading
 ```java
 Configuration conf = new Configuration();
-conf.set("es.resource", "radio/artists");
+conf.set("opensearch.resource", "radio/artists");
 conf.set("es.query", "?q=me*");             // replace this with the relevant query
 Job job = new Job(conf)
 job.setInputFormatClass(EsInputFormat.class);
@@ -134,7 +134,7 @@ job.waitForCompletion(true);
 ### Writing
 ```java
 Configuration conf = new Configuration();
-conf.set("es.resource", "radio/artists"); // index or indices used for storing data
+conf.set("opensearch.resource", "radio/artists"); // index or indices used for storing data
 Job job = new Job(conf)
 job.setOutputFormatClass(EsOutputFormat.class);
 ...
@@ -156,7 +156,7 @@ CREATE EXTERNAL TABLE artists (
     name    STRING,
     links   STRUCT<url:STRING, picture:STRING>)
 STORED BY 'org.opensearch.hive.hadoop.EsStorageHandler'
-TBLPROPERTIES('es.resource' = 'radio/artists', 'es.query' = '?q=me*');
+TBLPROPERTIES('opensearch.resource' = 'radio/artists', 'es.query' = '?q=me*');
 ```
 The fields defined in the table are mapped to the JSON when communicating with Elasticsearch. Notice the use of `TBLPROPERTIES` to define the location, that is the query used for reading from this table.
 
@@ -166,14 +166,14 @@ SELECT * FROM artists;
 ```
 
 ### Writing
-To write data, a similar definition is used but with a different `es.resource`:
+To write data, a similar definition is used but with a different `opensearch.resource`:
 ```SQL
 CREATE EXTERNAL TABLE artists (
     id      BIGINT,
     name    STRING,
     links   STRUCT<url:STRING, picture:STRING>)
 STORED BY 'org.opensearch.hive.hadoop.EsStorageHandler'
-TBLPROPERTIES('es.resource' = 'radio/artists');
+TBLPROPERTIES('opensearch.resource' = 'radio/artists');
 ```
 
 Any data passed to the table is then passed down to Elasticsearch; for example considering a table `s`, mapped to a TSV/CSV file, one can index it to Elasticsearch like this:
