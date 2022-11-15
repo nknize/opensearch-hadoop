@@ -46,7 +46,7 @@ private[spark] abstract class AbstractOpenSearchRDD[T: ClassTag](
   val params: scala.collection.Map[String, String] = Map.empty)
   extends RDD[T](sc, Nil) {
 
-  private val init = { ObjectUtils.loadClass("org.elasticsearch.spark.rdd.CompatUtils", classOf[ObjectUtils].getClassLoader) }
+  private val init = { ObjectUtils.loadClass("org.opensearch.spark.rdd.CompatUtils", classOf[ObjectUtils].getClassLoader) }
 
   @transient protected lazy val logger = LogFactory.getLog(this.getClass())
 

@@ -59,7 +59,7 @@ import org.opensearch.spark.serialization.ReflectionUtils
 import org.opensearch.spark.sparkByteArrayJsonRDDFunctions
 import org.opensearch.spark.sparkContextFunctions
 import org.opensearch.spark.sparkPairRDDFunctions
-import org.elasticsearch.spark.sparkRDDFunctions
+import org.opensearch.spark.sparkRDDFunctions
 import org.opensearch.spark.sparkStringJsonRDDFunctions
 import org.hamcrest.Matchers.both
 import org.hamcrest.Matchers.containsString

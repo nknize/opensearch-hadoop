@@ -48,7 +48,7 @@ import org.opensearch.hadoop.util.ObjectUtils
 @deprecated(message="Support for Apache Spark 1 is deprecated. Use Spark 2 or 3.")
 object OpenSearchSparkSQL {
 
-  private val init = { ObjectUtils.loadClass("org.elasticsearch.spark.rdd.CompatUtils", classOf[ObjectUtils].getClassLoader) }
+  private val init = { ObjectUtils.loadClass("org.opensearch.spark.rdd.CompatUtils", classOf[ObjectUtils].getClassLoader) }
 
   @transient private[this] val LOG = LogFactory.getLog(OpenSearchSparkSQL.getClass)
 

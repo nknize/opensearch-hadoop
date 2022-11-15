@@ -49,7 +49,7 @@ import scala.collection.Map
 
 object OpenSearchSparkSQL {
 
-  private val init = { ObjectUtils.loadClass("org.elasticsearch.spark.rdd.CompatUtils", classOf[ObjectUtils].getClassLoader) }
+  private val init = { ObjectUtils.loadClass("org.opensearch.spark.rdd.CompatUtils", classOf[ObjectUtils].getClassLoader) }
 
   @transient private[this] val LOG = LogFactory.getLog(OpenSearchSparkSQL.getClass)
 

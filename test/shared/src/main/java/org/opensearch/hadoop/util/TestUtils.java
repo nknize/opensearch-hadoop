@@ -82,7 +82,7 @@ public class TestUtils {
 
     public static boolean isTypelessVersion(OpenSearchMajorVersion version) {
         // Types have been deprecated in 7.0.0, and will be removed at a later date
-        return version.onOrAfter(OpenSearchMajorVersion.V_7_X);
+        return version.onOrAfter(OpenSearchMajorVersion.V_2_X);
     }
 
     public static boolean isWindows() {
