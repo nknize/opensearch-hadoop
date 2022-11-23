@@ -140,7 +140,7 @@ class AbstractScalaOpenSearchScalaSpark(prefix: String, readMetadata: jl.Boolean
   val sc = AbstractScalaOpenSearchScalaSpark.sc
   val cfg = Map(ES_READ_METADATA -> readMetadata.toString())
   val version: OpenSearchMajorVersion = TestUtils.getOpenSearchClusterInfo.getMajorVersion
-  val keyword: String = if (version.onOrAfter(OpenSearchMajorVersion.V_5_X)) "keyword" else "string"
+  val keyword: String = "keyword"
 
   private def readAsRDD(uri: URI) = {
     // don't use the sc.read.json/textFile to avoid the whole Hadoop madness
@@ -188,11 +188,11 @@ class AbstractScalaOpenSearchScalaSpark(prefix: String, readMetadata: jl.Boolean
     assertThat(RestUtils.get(target + "/_search?"), containsString(""))
   }
 
-  @Test(expected = classOf[SparkException])
-  def testNestedUnknownCharacter() {
-    val doc = Map("itemId" -> "1", "map" -> Map("lat" -> 1.23, "lon" -> -70.12), "list" -> ("A", "B", "C"), "unknown" -> new Garbage(0))
-    sc.makeRDD(Seq(doc)).saveToEs(wrapIndex(resource("spark-test-nested-map", "data", version)), cfg)
-  }
+  // @Test(expected = classOf[SparkException])
+  // def testNestedUnknownCharacter() {
+  //   val doc = Map("itemId" -> "1", "map" -> Map("lat" -> 1.23, "lon" -> -70.12), "list" -> ("A", "B", "C"), "unknown" -> new Garbage(0))
+  //   sc.makeRDD(Seq(doc)).saveToEs(wrapIndex(resource("spark-test-nested-map", "data", version)), cfg)
+  // }
 
   @Test
   def testEsRDDWriteCaseClass() {
@@ -272,7 +272,6 @@ class AbstractScalaOpenSearchScalaSpark(prefix: String, readMetadata: jl.Boolean
 
   @Test(expected = classOf[OpenSearchHadoopSerializationException])
   def testEsRDDWriteWithUnsupportedMapping() {
-    OpenSearchAssume.versionOnOrAfter(OpenSearchMajorVersion.V_6_X, "TTL only removed in v6 and up.")
 
     val doc1 = Map("one" -> null, "two" -> Set("2"), "three" -> (".", "..", "..."), "number" -> 1)
     val doc2 = Map("OTP" -> "Otopeni", "SFO" -> "San Fran", "number" -> 2)
@@ -313,10 +312,6 @@ class AbstractScalaOpenSearchScalaSpark(prefix: String, readMetadata: jl.Boolean
 
   @Test
   def testEsRDDWriteJoinField(): Unit = {
-    // Join added in 6.0.
-    // TODO: Available in 5.6, but we only track major version ids in the connector.
-    OpenSearchAssume.versionOnOrAfter(OpenSearchMajorVersion.V_6_X, "Join added in 6.0.")
-
     // test mix of short-form and long-form joiner values
     val company1 = Map("id" -> "1", "company" -> "Elastic", "joiner" -> "company")
     val company2 = Map("id" -> "2", "company" -> "Fringe Cafe", "joiner" -> Map("name" -> "company"))
@@ -409,8 +404,6 @@ class AbstractScalaOpenSearchScalaSpark(prefix: String, readMetadata: jl.Boolean
 
   @Test
   def testEsRDDIngest() {
-    OpenSearchAssume.versionOnOrAfter(OpenSearchMajorVersion.V_5_X, "Ingest Supported in 5.x and above only")
-
     val client: RestUtils.ExtendedRestClient = new RestUtils.ExtendedRestClient
     val prefix: String = "spark"
     val pipeline: String = "{\"description\":\"Test Pipeline\",\"processors\":[{\"set\":{\"field\":\"pipeTEST\",\"value\":true,\"override\":true}}]}"
@@ -467,194 +460,103 @@ class AbstractScalaOpenSearchScalaSpark(prefix: String, readMetadata: jl.Boolean
     assertThat(RestUtils.get(wrapIndex(resource("spark-test-json-otp", "data", version) + "/_search?")), containsString("participants"))
   }
 
-  @Test(expected = classOf[OpenSearchHadoopIllegalArgumentException ])
-  def testEsRDDBreakOnFileScript(): Unit = {
-    OpenSearchAssume.versionOnOrAfter(OpenSearchMajorVersion.V_6_X, "File scripts are only removed in 6.x and on")
-    val props = Map("es.write.operation" -> "upsert", "es.update.script.file" -> "break")
-    val lines = sc.makeRDD(List(Map("id" -> "1")))
-    try {
-      lines.saveToEs("should-break", props)
-    } catch {
-      case s: SparkException => throw s.getCause
-      case t: Throwable => throw t
-    }
-    fail("Should not have succeeded with file script on ES 6x and up.")
-  }
+  // @Test
+  // def testEsRDDWriteStoredScriptUpdate(): Unit = {
+  //   val mapping = wrapMapping("data",
+  //     s"""{
+  //       |    "properties": {
+  //       |      "id": {
+  //       |        "type": "$keyword"
+  //       |      },
+  //       |      "counter": {
+  //       |        "type": "long"
+  //       |      }
+  //       |    }
+  //       |}""".stripMargin)
 
-  @Test
-  def testEsRDDWriteFileScriptUpdate(): Unit = {
-    OpenSearchAssume.versionOnOrBefore(OpenSearchMajorVersion.V_5_X, "File scripts are only available in 5.x and lower")
-    // assumes you have a script named "increment" as a file. I don't think there's a way to verify this before
-    // the test runs. Maybe a quick poke before the job runs?
+  //   val index = wrapIndex("spark-test-stored")
+  //   val typename = "data"
+  //   val target = resource(index, typename, version)
+  //   val docPath = docEndpoint(index, typename, version)
 
-    val mapping = wrapMapping("data",
-      s"""{
-         |    "properties": {
-         |      "id": {
-         |        "type": "$keyword"
-         |      },
-         |      "counter": {
-         |        "type": "long"
-         |      }
-         |    }
-         |}""".stripMargin)
+  //   RestUtils.touch(index)
+  //   RestUtils.putMapping(index, typename, mapping.getBytes())
+  //   RestUtils.put(s"$docPath/1", """{"id":"1", "counter":5}""".getBytes(StringUtils.UTF_8))
 
-    val index = wrapIndex("spark-test-stored")
-    RestUtils.touch(index)
+  //   val scriptName = "increment"
+  //   val lang =  "painless"
+  //   val script = "ctx._source.counter = ctx._source.getOrDefault('counter', 0) + 1"
 
-    val typename = "data"
-    val target = resource(index, typename, version)
-    val docPath = docEndpoint(index, typename, version)
+  //   RestUtils.put(s"_scripts/$scriptName", s"""{"script":{"lang":"$lang", "source": "$script"}}""".getBytes(StringUtils.UTF_8))
 
-    RestUtils.putMapping(index, typename, mapping.getBytes)
+  //   val props = Map("es.write.operation" -> "update", "es.mapping.id" -> "id", "es.update.script.stored" -> scriptName)
+  //   val lines = sc.makeRDD(List(Map("id"->"1")))
+  //   lines.saveToEs(target, props)
 
-    RestUtils.refresh(index)
-    RestUtils.put(s"$docPath/1", """{"id":"1", "counter":4}""".getBytes(StringUtils.UTF_8))
+  //   val docs = RestUtils.get(s"$target/_search")
+  //   Assert.assertThat(docs, containsString(""""counter":6"""))
+  // }
 
-    // Test assumption:
-    try {
-      if (version.onOrBefore(OpenSearchMajorVersion.V_2_X)) {
-        RestUtils.postData(s"$target/1/_update", """{"script_file":"increment"}""".getBytes(StringUtils.UTF_8))
-      } else if (TestUtils.isTypelessVersion(version)) {
-        RestUtils.postData(s"$index/_update/1", """{"script": { "file":"increment" } }""".getBytes(StringUtils.UTF_8))
-      } else {
-        RestUtils.postData(s"$target/1/_update", """{"script": { "file":"increment" } }""".getBytes(StringUtils.UTF_8))
-      }
-    } catch {
-      case t: Throwable => assumeNoException("Script not installed", t)
-    }
+  // @Test
+  // def testEsRDDWriteWithUpsertScriptUsingBothObjectAndRegularString() {
+  //   val mapping = wrapMapping("data", s"""{
+  //                   |    "properties": {
+  //                   |      "id": {
+  //                   |        "type": "$keyword"
+  //                   |      },
+  //                   |      "note": {
+  //                   |        "type": "$keyword"
+  //                   |      },
+  //                   |      "address": {
+  //                   |        "type": "nested",
+  //                   |        "properties": {
+  //                   |          "id":    { "type": "$keyword"  },
+  //                   |          "zipcode": { "type": "$keyword"  }
+  //                   |        }
+  //                   |      }
+  //                   |    }
+  //                   |}""".stripMargin)
 
-    val scriptName = "increment"
-    val lang = if (version.onOrAfter(OpenSearchMajorVersion.V_5_X)) "painless" else "groovy"
-    val script = if (version.onOrAfter(OpenSearchMajorVersion.V_5_X)) {
-      "ctx._source.counter = ctx._source.getOrDefault('counter', 0) + 1"
-    } else {
-      "ctx._source.counter += 1"
-    }
+  //   val index = wrapIndex("spark-test-contact")
+  //   val typename = "data"
+  //   val target = resource(index, typename, version)
+  //   val docPath = docEndpoint(index, typename, version)
 
-    val props = Map("es.write.operation" -> "update", "es.mapping.id" -> "id", "es.update.script.file" -> scriptName)
-    val lines = sc.makeRDD(List(Map("id"->"1")))
-    lines.saveToEs(target, props)
+  //   RestUtils.touch(index)
 
-    val docs = RestUtils.get(s"$target/_search")
-    Assert.assertThat(docs, containsString(""""counter":6"""))
-  }
+  //   // RestUtils.putMapping(index, typename, mapping.getBytes())
+  //   RestUtils.postData(s"$docPath/1", """{ "id" : "1", "note": "First", "address": [] }""".getBytes(StringUtils.UTF_8))
+  //   RestUtils.postData(s"$docPath/2", """{ "id" : "2", "note": "First", "address": [] }""".getBytes(StringUtils.UTF_8))
 
-  @Test
-  def testEsRDDWriteStoredScriptUpdate(): Unit = {
-    val mapping = wrapMapping("data",
-      s"""{
-        |    "properties": {
-        |      "id": {
-        |        "type": "$keyword"
-        |      },
-        |      "counter": {
-        |        "type": "long"
-        |      }
-        |    }
-        |}""".stripMargin)
+  //   val lang = "painless"
+  //   val props = Map("es.write.operation" -> "upsert",
+  //     "es.input.json" -> "true",
+  //     "es.mapping.id" -> "id"
+  //     // "es.update.script.lang" -> lang
+  //   )
 
-    val index = wrapIndex("spark-test-stored")
-    val typename = "data"
-    val target = resource(index, typename, version)
-    val docPath = docEndpoint(index, typename, version)
+  //   // Upsert a value that should only modify the first document. Modification will add an address entry.
+  //   val lines = sc.makeRDD(List("""{"id":"1","address":{"zipcode":"12345","id":"1"}}"""))
+  //   val up_params = "new_address:address"
+  //   val up_script = {
+  //       "ctx._source.address.add(params.new_address)"
+  //   }
+  //   lines.saveToEs(target, props + ("es.update.script.params" -> up_params) + ("es.update.script" -> up_script))
 
-    RestUtils.touch(index)
-    RestUtils.putMapping(index, typename, mapping.getBytes())
-    RestUtils.put(s"$docPath/1", """{"id":"1", "counter":5}""".getBytes(StringUtils.UTF_8))
+  //   // Upsert a value that should only modify the second document. Modification will update the "note" field.
+  //   val notes = sc.makeRDD(List("""{"id":"2","note":"Second"}"""))
+  //   val note_up_params = "new_note:note"
+  //   val note_up_script = {
+  //       "ctx._source.note = params.new_note"
+  //   }
+  //   notes.saveToEs(target, props + ("es.update.script.params" -> note_up_params) + ("es.update.script" -> note_up_script))
 
-    val scriptName = "increment"
-    val lang = if (version.onOrAfter(OpenSearchMajorVersion.V_5_X)) "painless" else "groovy"
-    val script = if (version.onOrAfter(OpenSearchMajorVersion.V_5_X)) {
-      "ctx._source.counter = ctx._source.getOrDefault('counter', 0) + 1"
-    } else {
-      "ctx._source.counter += 1"
-    }
+  //   assertTrue(RestUtils.exists(s"$docPath/1"))
+  //   assertThat(RestUtils.get(s"$docPath/1"), both(containsString(""""zipcode":"12345"""")).and(containsString(""""note":"First"""")))
 
-    if (version.onOrAfter(OpenSearchMajorVersion.V_3_X)) {
-      RestUtils.put(s"_scripts/$scriptName", s"""{"script":{"lang":"$lang", "source": "$script"}}""".getBytes(StringUtils.UTF_8))
-    } else if (version.onOrAfter(OpenSearchMajorVersion.V_5_X)) {
-      RestUtils.put(s"_scripts/$scriptName", s"""{"script":{"lang":"$lang", "code": "$script"}}""".getBytes(StringUtils.UTF_8))
-    } else {
-      RestUtils.put(s"_scripts/$lang/$scriptName", s"""{"script":"$script"}""".getBytes(StringUtils.UTF_8))
-    }
-
-    val props = Map("es.write.operation" -> "update", "es.mapping.id" -> "id", "es.update.script.stored" -> scriptName)
-    val lines = sc.makeRDD(List(Map("id"->"1")))
-    lines.saveToEs(target, props)
-
-    val docs = RestUtils.get(s"$target/_search")
-    Assert.assertThat(docs, containsString(""""counter":6"""))
-  }
-
-  @Test
-  def testEsRDDWriteWithUpsertScriptUsingBothObjectAndRegularString() {
-    val mapping = wrapMapping("data", s"""{
-                    |    "properties": {
-                    |      "id": {
-                    |        "type": "$keyword"
-                    |      },
-                    |      "note": {
-                    |        "type": "$keyword"
-                    |      },
-                    |      "address": {
-                    |        "type": "nested",
-                    |        "properties": {
-                    |          "id":    { "type": "$keyword"  },
-                    |          "zipcode": { "type": "$keyword"  }
-                    |        }
-                    |      }
-                    |    }
-                    |}""".stripMargin)
-
-    val index = wrapIndex("spark-test-contact")
-    val typename = "data"
-    val target = resource(index, typename, version)
-    val docPath = docEndpoint(index, typename, version)
-
-    RestUtils.touch(index)
-
-    RestUtils.putMapping(index, typename, mapping.getBytes())
-    RestUtils.postData(s"$docPath/1", """{ "id" : "1", "note": "First", "address": [] }""".getBytes(StringUtils.UTF_8))
-    RestUtils.postData(s"$docPath/2", """{ "id" : "2", "note": "First", "address": [] }""".getBytes(StringUtils.UTF_8))
-
-    val lang = if (version.onOrAfter(OpenSearchMajorVersion.V_5_X)) "painless" else "groovy"
-    val props = Map("es.write.operation" -> "upsert",
-      "es.input.json" -> "true",
-      "es.mapping.id" -> "id",
-      "es.update.script.lang" -> lang
-    )
-
-    // Upsert a value that should only modify the first document. Modification will add an address entry.
-    val lines = sc.makeRDD(List("""{"id":"1","address":{"zipcode":"12345","id":"1"}}"""))
-    val up_params = "new_address:address"
-    val up_script = {
-      if (version.onOrAfter(OpenSearchMajorVersion.V_5_X)) {
-        "ctx._source.address.add(params.new_address)"
-      } else {
-        "ctx._source.address+=new_address"
-      }
-    }
-    lines.saveToEs(target, props + ("es.update.script.params" -> up_params) + ("es.update.script" -> up_script))
-
-    // Upsert a value that should only modify the second document. Modification will update the "note" field.
-    val notes = sc.makeRDD(List("""{"id":"2","note":"Second"}"""))
-    val note_up_params = "new_note:note"
-    val note_up_script = {
-      if (version.onOrAfter(OpenSearchMajorVersion.V_5_X)) {
-        "ctx._source.note = params.new_note"
-      } else {
-        "ctx._source.note=new_note"
-      }
-    }
-    notes.saveToEs(target, props + ("es.update.script.params" -> note_up_params) + ("es.update.script" -> note_up_script))
-
-    assertTrue(RestUtils.exists(s"$docPath/1"))
-    assertThat(RestUtils.get(s"$docPath/1"), both(containsString(""""zipcode":"12345"""")).and(containsString(""""note":"First"""")))
-
-    assertTrue(RestUtils.exists(s"$docPath/2"))
-    assertThat(RestUtils.get(s"$docPath/2"), both(not(containsString(""""zipcode":"12345""""))).and(containsString(""""note":"Second"""")))
-  }
+  //   assertTrue(RestUtils.exists(s"$docPath/2"))
+  //   assertThat(RestUtils.get(s"$docPath/2"), both(not(containsString(""""zipcode":"12345""""))).and(containsString(""""note":"Second"""")))
+  // }
 
   @Test
   def testEsRDDRead() {
@@ -671,25 +573,6 @@ class AbstractScalaOpenSearchScalaSpark(prefix: String, readMetadata: jl.Boolean
     assertTrue(messages.count() == 2)
     assertNotNull(messages.take(10))
     assertNotNull(messages)
-  }
-
-  @Test
-  def testEsRDDReadNoType(): Unit = {
-    OpenSearchAssume.versionOnOrBefore(OpenSearchMajorVersion.V_6_X, "after 6.x, it is assumed that new types are unnamed.")
-    val doc =
-      """{
-        |  "id": 1,
-        |  "data": [],
-        |  "event": "acknowledge"
-        |}
-      """.stripMargin
-    val target = wrapIndex("spark-test-scala-basic-read-notype")
-    RestUtils.put(s"$target/events/1", doc.getBytes())
-    RestUtils.refresh(target)
-
-    val noType = sc.esRDD(target).first.toString
-    val typed = sc.esRDD(s"$target/events").first.toString
-    assertEquals(typed, noType)
   }
 
   @Test
@@ -816,11 +699,7 @@ class AbstractScalaOpenSearchScalaSpark(prefix: String, readMetadata: jl.Boolean
     val target = resource(index, typename, version)
 
     val indexPattern = "spark-template-*"
-    val patternMatchField = if (version.onOrAfter(OpenSearchMajorVersion.V_3_X)) {
-      s""""index_patterns":["$indexPattern"],"""
-    } else {
-      s""""template": "$indexPattern","""
-    }
+    val patternMatchField = s""""index_patterns":["$indexPattern"],"""
 
     val template = s"""
         |{

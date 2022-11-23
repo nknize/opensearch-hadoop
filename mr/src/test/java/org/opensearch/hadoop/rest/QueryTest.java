@@ -44,13 +44,13 @@ public class QueryTest {
     @Before
     public void setup() {
         cfg = new TestSettings();
-        builder = new SearchRequestBuilder(OpenSearchMajorVersion.V_5_X, true);
+        builder = new SearchRequestBuilder(OpenSearchMajorVersion.V_1_X, true);
     }
 
     @Test
     public void testSimpleQuery() {
         // Types will not be supported in 8.x
-        cfg.setInternalVersion(OpenSearchMajorVersion.V_7_X);
+        cfg.setInternalVersion(OpenSearchMajorVersion.V_1_X);
         cfg.setResourceRead("foo/bar");
         Resource typed = new Resource(cfg, true);
         assertTrue(builder.resource(typed).toString().contains("foo/bar"));

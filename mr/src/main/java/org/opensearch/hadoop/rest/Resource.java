@@ -92,7 +92,7 @@ public class Resource {
         boolean typeExists = slash >= 0;
 
         OpenSearchMajorVersion opensearchMajorVersion = settings.getInternalVersionOrThrow();
-        if (opensearchMajorVersion.after(OpenSearchMajorVersion.V_7_X)) {
+        if (opensearchMajorVersion.after(OpenSearchMajorVersion.V_1_X)) {
             // Types can no longer the specified at all! Index names only!
             if (typeExists) {
                 throw new OpenSearchHadoopIllegalArgumentException(String.format(
@@ -101,24 +101,13 @@ public class Resource {
                 ));
             }
         }
-        if (opensearchMajorVersion.onOrBefore(OpenSearchMajorVersion.V_7_X)) {
+        if (opensearchMajorVersion.onOrBefore(OpenSearchMajorVersion.V_2_X)) {
             // Type can be specified, but a warning will be returned. An ES 7.X cluster will accept types if include_type_name is true,
             // which we will set in the case of a type existing.
             // This is onOrBefore because we want to print the deprecation log no matter what version of ES they're running on.
             if (typeExists) {
                 LOG.warn(String.format(
                         "Detected type name in resource [%s]. Type names are deprecated and will be removed in a later release.",
-                        resource
-                ));
-            }
-        }
-        if (opensearchMajorVersion.onOrBefore(OpenSearchMajorVersion.V_6_X)) {
-            // Type is required for writing via the bulk API, but not for reading. No type on a read resource means to read all types.
-            // This is important even if we're on a 6.x cluster that enforces a single type per index. 6.x STILL supports opening old 5.x
-            // indices in order to ease the upgrade process!!!!
-            if (!read && !typeExists) {
-                throw new OpenSearchHadoopIllegalArgumentException(String.format(
-                        "No type found; Types are required when writing in ES versions 6 and below. Expected [index]/[type], but got [%s]",
                         resource
                 ));
             }

@@ -642,6 +642,6 @@ private[sql] case class ElasticsearchRelation(parameters: Map[String, String], @
     } else {
       cfg.getInternalVersionOrThrow
     }
-    version.onOrAfter(OpenSearchMajorVersion.V_5_X)
+    return true
   }
 }

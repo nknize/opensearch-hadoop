@@ -246,9 +246,7 @@ public class SearchRequestBuilder {
 
         // Always track total hits on versions that support it. 7.0+ will return lower bounded
         // hit counts if this is not set, and we want them to be accurate for scroll bookkeeping.
-        if (version.onOrAfter(OpenSearchMajorVersion.V_6_X)) {
-            uriParams.put("track_total_hits", "true");
-        }
+        uriParams.put("track_total_hits", "true");
 
         if (readMetadata) {
             uriParams.put("track_scores", "true");
@@ -276,11 +274,7 @@ public class SearchRequestBuilder {
             root = MatchAllQueryBuilder.MATCH_ALL;
         }
         if (filters.isEmpty() == false) {
-            if (version.onOrAfter(OpenSearchMajorVersion.V_2_X)) {
-                root = new BoolQueryBuilder().must(root).filters(filters);
-            } else {
-                root = new FilteredQueryBuilder().query(root).filters(filters);
-            }
+            root = new BoolQueryBuilder().must(root).filters(filters);
         }
         FastByteArrayOutputStream out = new FastByteArrayOutputStream(256);
         JacksonJsonGenerator generator = new JacksonJsonGenerator(out);

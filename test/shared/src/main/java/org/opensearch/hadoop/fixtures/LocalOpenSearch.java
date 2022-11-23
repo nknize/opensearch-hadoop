@@ -87,14 +87,6 @@ public class LocalOpenSearch extends ExternalResource {
     private void setSingleNodeTemplate() throws Exception {
         LogFactory.getLog(getClass()).warn("Installing single node template...");
         ClusterInfo clusterInfo = InitializationUtils.discoverClusterInfo(new TestSettings(), LogFactory.getLog(this.getClass()));
-        // todo remove in re-versioning
-        if (false && clusterInfo.getMajorVersion().onOrBefore(OpenSearchMajorVersion.V_5_X)) {
-            RestUtils.put("_template/single-node-template",
-                    "{\"template\": \"*\", \"settings\": {\"number_of_shards\": 1,\"number_of_replicas\": 0}}".getBytes());
-        } else if (false && clusterInfo.getMajorVersion().onOrBefore(OpenSearchMajorVersion.V_6_X)) {
-            RestUtils.put("_template/single-node-template",
-                    "{\"index_patterns\": \"*\", \"settings\": {\"number_of_shards\": 1,\"number_of_replicas\": 0}}".getBytes());
-        }
     }
 
     private void clearState() throws Exception {

@@ -209,19 +209,11 @@ public abstract class AbstractBulkFactory implements BulkFactory {
         final String versionType;
 
         public RequestParameterNames(OpenSearchMajorVersion majorVersion) {
-            if (majorVersion.onOrAfter(OpenSearchMajorVersion.V_7_X)) {
-                this.parent = "\"parent\":";
-                this.retryOnConflict = "\"retry_on_conflict\":";
-                this.routing = "\"routing\":";
-                this.version = "\"version\":";
-                this.versionType = "\"version_type\":";
-            } else {
-                this.parent = "\"_parent\":";
-                this.retryOnConflict = "\"_retry_on_conflict\":";
-                this.routing = "\"_routing\":";
-                this.version = "\"_version\":";
-                this.versionType = "\"_version_type\":";
-            }
+            this.parent = "\"parent\":";
+            this.retryOnConflict = "\"retry_on_conflict\":";
+            this.routing = "\"routing\":";
+            this.version = "\"version\":";
+            this.versionType = "\"version_type\":";
         }
     }
 
@@ -415,8 +407,6 @@ public abstract class AbstractBulkFactory implements BulkFactory {
         commaMightBeNeeded = id(list, commaMightBeNeeded);
         commaMightBeNeeded = addExtractorOrDynamicValue(list, getMetadataExtractorOrFallback(MetadataExtractor.Metadata.PARENT, parentExtractor), requestParameterNames.parent, commaMightBeNeeded);
         commaMightBeNeeded = addExtractorOrDynamicValueAsFieldWriter(list, getMetadataExtractorOrFallback(MetadataExtractor.Metadata.ROUTING, routingExtractor), requestParameterNames.routing, commaMightBeNeeded);
-        commaMightBeNeeded = addExtractorOrDynamicValue(list, getMetadataExtractorOrFallback(MetadataExtractor.Metadata.TTL, ttlExtractor), "\"_ttl\":", commaMightBeNeeded);
-        commaMightBeNeeded = addExtractorOrDynamicValue(list, getMetadataExtractorOrFallback(MetadataExtractor.Metadata.TIMESTAMP, timestampExtractor), "\"_timestamp\":", commaMightBeNeeded);
 
         // version & version_type fields
         Object versionField = getMetadataExtractorOrFallback(MetadataExtractor.Metadata.VERSION, versionExtractor);

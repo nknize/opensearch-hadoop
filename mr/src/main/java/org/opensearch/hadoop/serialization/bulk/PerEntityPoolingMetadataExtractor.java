@@ -7,7 +7,7 @@
  * Modifications Copyright OpenSearch Contributors. See
  * GitHub history for details.
  */
- 
+
 /*
  * Licensed to Elasticsearch under one or more contributor
  * license agreements. See the NOTICE file distributed with
@@ -51,9 +51,9 @@ public abstract class PerEntityPoolingMetadataExtractor implements MetadataExtra
         public Object field(Object target) {
             return field;
         }
-        
+
         protected Object field() {
-        	return field;
+            return field;
         }
 
         public void setField(Object field) {
@@ -65,17 +65,21 @@ public abstract class PerEntityPoolingMetadataExtractor implements MetadataExtra
             return needsInit;
         }
     }
-    
+
     public void setSettings(Settings settings) {
-    	this.settings = settings;
-    	this.version = settings.getInternalVersionOrThrow();
+        this.settings = settings;
+        this.version = settings.getInternalVersionOrThrow();
     }
 
     /**
-     * A special field extractor meant to be used for metadata fields that are supported in
-     * some versions of Elasticsearch, but not others. In the case that a metadata field is
-     * unsupported for the configured version of Elasticsearch, this extractor which throws
-     * exceptions for using unsupported metadata tags is returned instead of the regular one.
+     * A special field extractor meant to be used for metadata fields that are
+     * supported in
+     * some versions of Elasticsearch, but not others. In the case that a metadata
+     * field is
+     * unsupported for the configured version of Elasticsearch, this extractor which
+     * throws
+     * exceptions for using unsupported metadata tags is returned instead of the
+     * regular one.
      */
     private static class UnsupportedMetadataFieldExtractor extends StaticFieldExtractor {
         private Metadata unsupportedMetadata;
@@ -88,8 +92,9 @@ public abstract class PerEntityPoolingMetadataExtractor implements MetadataExtra
 
         @Override
         public Object field(Object target) {
-            throw new OpenSearchHadoopUnsupportedOperationException("Unsupported metadata tag [" + unsupportedMetadata.getName()
-                    + "] for Elasticsearch version [" + version.toString() + "]. Bailing out...");
+            throw new OpenSearchHadoopUnsupportedOperationException(
+                    "Unsupported metadata tag [" + unsupportedMetadata.getName()
+                            + "] for Elasticsearch version [" + version.toString() + "]. Bailing out...");
         }
     }
 
@@ -103,18 +108,19 @@ public abstract class PerEntityPoolingMetadataExtractor implements MetadataExtra
     public FieldExtractor get(Metadata metadata) {
         FieldExtractor fieldExtractor = pool.get(metadata);
 
-        if (fieldExtractor == null || (fieldExtractor instanceof StaticFieldExtractor && ((StaticFieldExtractor)fieldExtractor).needsInit())) {
+        if (fieldExtractor == null || (fieldExtractor instanceof StaticFieldExtractor
+                && ((StaticFieldExtractor) fieldExtractor).needsInit())) {
             Object value = getValue(metadata);
             if (value == null) {
                 return null;
             }
-            
+
             if (fieldExtractor == null) {
                 fieldExtractor = _createExtractorFor(metadata);
             }
-            
-            if(fieldExtractor instanceof StaticFieldExtractor && ((StaticFieldExtractor)fieldExtractor).needsInit()) {
-            	((StaticFieldExtractor)fieldExtractor).setField(value);
+
+            if (fieldExtractor instanceof StaticFieldExtractor && ((StaticFieldExtractor) fieldExtractor).needsInit()) {
+                ((StaticFieldExtractor) fieldExtractor).setField(value);
             }
             pool.put(metadata, fieldExtractor);
         }
@@ -125,25 +131,15 @@ public abstract class PerEntityPoolingMetadataExtractor implements MetadataExtra
      * If a metadata tag is unsupported for this version of Elasticsearch then a
      */
     private FieldExtractor _createExtractorFor(Metadata metadata) {
-        // Boot metadata tags that are not supported in this version of Elasticsearch
-        if (version.onOrAfter(OpenSearchMajorVersion.V_6_X)) {
-            // 6.0 Removed support for TTL and Timestamp metadata on index and update requests.
-            switch (metadata) {
-                case TTL: // Fall through
-                case TIMESTAMP:
-                    return new UnsupportedMetadataFieldExtractor(metadata, version);
-            }
-        }
-
         return createExtractorFor(metadata);
     }
-    
+
     protected FieldExtractor createExtractorFor(Metadata metadata) {
-    	return new StaticFieldExtractor();
+        return new StaticFieldExtractor();
     }
 
     public abstract Object getValue(Metadata metadata);
-    
+
     @Override
     public void setObject(Object entity) {
         this.entity = entity;

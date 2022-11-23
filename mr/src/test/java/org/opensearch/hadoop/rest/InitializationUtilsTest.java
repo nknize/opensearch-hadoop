@@ -132,22 +132,6 @@ public class InitializationUtilsTest {
     }
 
     @Test(expected = OpenSearchHadoopIllegalArgumentException.class)
-    public void testValidateWriteV6PlusTTLRemoved() throws Exception {
-        Settings set = new TestSettings();
-        set.setInternalClusterInfo(ClusterInfo.unnamedClusterWithVersion(OpenSearchMajorVersion.V_6_X));
-        set.setProperty(ES_MAPPING_TTL, "1000");
-        validateSettingsForWriting(set);
-    }
-
-    @Test(expected = OpenSearchHadoopIllegalArgumentException.class)
-    public void testValidateWriteV6PlusTimestampRemoved() throws Exception {
-        Settings set = new TestSettings();
-        set.setInternalClusterInfo(ClusterInfo.unnamedClusterWithVersion(OpenSearchMajorVersion.V_6_X));
-        set.setProperty(ES_MAPPING_TIMESTAMP, "1000");
-        validateSettingsForWriting(set);
-    }
-
-    @Test(expected = OpenSearchHadoopIllegalArgumentException.class)
     public void testValidateDeleteOperationVsInputAsJson() {
         Settings set = new TestSettings();
         set.setProperty(ES_WRITE_OPERATION, "delete");
