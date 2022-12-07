@@ -42,9 +42,9 @@ dependencies {
     }
 }
 
-// Target Java 1.8 compilation
-sourceCompatibility = '1.8'
-targetCompatibility = '1.8'
+// Target Java 1.11 compilation
+sourceCompatibility = JavaVersion.VERSION_11
+targetCompatibility = JavaVersion.VERSION_11
 
 // for testing, until fixture are actually debuggable.
 // gradle hides EVERYTHING so you have no clue what went wrong.

@@ -29,6 +29,7 @@
 
 package org.opensearch.hadoop.gradle
 
+import org.gradle.api.JavaVersion
 import org.opensearch.gradle.DependenciesInfoPlugin
 import org.opensearch.gradle.info.BuildParams
 import org.opensearch.gradle.precommit.DependencyLicensesTask
@@ -334,9 +335,9 @@ class BuildPlugin implements Plugin<Project>  {
      * @param project to be configured
      */
     private static void configureBuildTasks(Project project) {
-        // Target Java 1.8 compilation
-        project.sourceCompatibility = '1.8'
-        project.targetCompatibility = '1.8'
+        // Target Java 1.11 compilation
+        project.sourceCompatibility = JavaVersion.VERSION_11
+        project.targetCompatibility = JavaVersion.VERSION_11
 
         // TODO: Remove all root project distribution logic. It should exist in a separate dist project.
         if (project != project.rootProject) {

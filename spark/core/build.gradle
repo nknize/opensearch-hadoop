@@ -13,9 +13,6 @@ sparkVariants {
     addCoreFeatureVariant "spark30scala213", spark30Version, scala213Version
     addCoreFeatureVariant "spark30scala212", spark30Version, scala212Version
     addCoreFeatureVariant "spark20scala211", spark24Version, scala211Version
-    addCoreFeatureVariant "spark20scala210", spark22Version, scala210Version
-    addCoreFeatureVariant "spark13scala211", spark13Version, scala211Version
-    addCoreFeatureVariant "spark13scala210", spark13Version, scala210Version
 
     all { SparkVariantPlugin.SparkVariant variant ->
 
@@ -157,8 +154,7 @@ if (JavaVersion.current() >= JavaVersion.VERSION_17) {
 
 // Set minimum compatibility and java home for compiler task
 tasks.withType(ScalaCompile) { ScalaCompile task ->
-    task.scalaCompileOptions.additionalParameters = ["-javabootclasspath", new File(project.ext.runtimeJavaHome, 'jre/lib/rt.jar').absolutePath]
-    task.options.bootstrapClasspath = layout.files(new File(project.ext.runtimeJavaHome, 'jre/lib/rt.jar'))
+    task.scalaCompileOptions.additionalParameters = ["-sourcepath", new File(project.ext.runtimeJavaHome, 'jre/lib/rt.jar').absolutePath]
     task.sourceCompatibility = project.ext.minimumRuntimeVersion
     task.targetCompatibility = project.ext.minimumRuntimeVersion
     task.options.forkOptions.executable = new File(project.ext.runtimeJavaHome, 'bin/java').absolutePath

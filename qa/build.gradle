@@ -50,6 +50,7 @@ subprojects {
                 flatDir { dirs new File(project.rootProject.rootDir, "localRepo") }
             } else {
                 maven { url "https://aws.oss.sonatype.org/content/repositories/snapshots" }
+                maven { url "https://d1nvenhzbhpy0q.cloudfront.net/snapshots/lucene/"} // lucene snapshots
             }
         }
         dependencies {

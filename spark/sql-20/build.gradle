@@ -11,7 +11,6 @@ sparkVariants {
     capabilityGroup 'org.opensearch.spark.sql.variant'
     setDefaultVariant "spark20scala212", spark24Version, scala212Version
     addFeatureVariant "spark20scala211", spark24Version, scala211Version
-    addFeatureVariant "spark20scala210", spark22Version, scala210Version
 
     all { SparkVariantPlugin.SparkVariant variant ->
         String scalaCompileTaskName = project.sourceSets
@@ -188,8 +187,7 @@ configurations.matching{ it.name.contains('CompilerPlugin') == false }.all { Con
 }
 
 tasks.withType(ScalaCompile) { ScalaCompile task ->
-    task.scalaCompileOptions.additionalParameters = ["-javabootclasspath", new File(project.ext.runtimeJavaHome, 'jre/lib/rt.jar').absolutePath]
-    task.options.bootstrapClasspath = layout.files(new File(project.ext.runtimeJavaHome, 'jre/lib/rt.jar'))
+    task.scalaCompileOptions.additionalParameters = ["-sourcepath", new File(project.ext.runtimeJavaHome, 'jre/lib/rt.jar').absolutePath]
     task.sourceCompatibility = project.ext.minimumRuntimeVersion
     task.targetCompatibility = project.ext.minimumRuntimeVersion
     task.options.forkOptions.executable = new File(project.ext.runtimeJavaHome, 'bin/java').absolutePath
